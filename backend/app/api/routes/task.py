@@ -4,9 +4,9 @@ from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from pydantic import BaseModel, Field  # type: ignore[reportMissingImports]
+from fastapi import APIRouter, Depends, HTTPException  # type: ignore[reportMissingImports]
+from sqlalchemy.orm import Session  # type: ignore[reportMissingImports]
 
 from ...agents import run_task_and_log_decision
 from ...risk_engine import RiskLevel, is_high_risk, calculate_risk

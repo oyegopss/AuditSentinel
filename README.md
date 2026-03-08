@@ -63,6 +63,16 @@ npm run dev
 
 By default the frontend expects the API at `http://localhost:8000`.
 
+### Deploying to Vercel
+
+The Next.js app lives in the **`frontend`** directory. For Vercel to detect Next.js and build correctly:
+
+1. In your Vercel project, go to **Settings** → **General**.
+2. Under **Root Directory**, click **Edit** and set it to **`frontend`**.
+3. Save and redeploy.
+
+If Root Directory is left at the repo root, Vercel will show "Could not identify Next.js version" because the app and its `package.json` are in `frontend/`.
+
 ### Smart contract (Polygon testnet)
 
 Contract: `smart-contracts/AuditSentinelAudit.sol`

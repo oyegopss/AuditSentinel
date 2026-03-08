@@ -3,56 +3,53 @@ pragma solidity ^0.8.20;
 
 /**
  * @title AuditSentinelAudit
- * @dev Minimal audit logging contract for Polygon testnet.
+ * @dev Stores audit log hashes and timestamps for AI actions on Polygon testnet.
  *
- * Each approved high‑risk AI action can be logged on‑chain by the backend.
- * The contract stores a compact record and emits an event to make it easy
- * to index from block explorers or off‑chain indexers.
+ * The backend hashes each high-risk AI action (SHA256 of action + timestamp + user)
+ * and records the hash and timestamp on-chain for immutability and verification.
  */
 contract AuditSentinelAudit {
-    struct AuditEntry {
-        bytes32 actionHash;
-        uint256 timestamp;
-        address actor;
-        string description;
-        string txId;
+    struct AIActionAuditLog {
+        bytes32 actionHash;   // SHA256 hash of the AI action (action|timestamp|user)
+        uint256 timestamp;    // When the action was logged (block.timestamp)
+        address logger;       // Address that submitted the log (backend relayer)
     }
 
-    event ActionLogged(
+    event AIActionLogged(
         bytes32 indexed actionHash,
         uint256 indexed timestamp,
-        address indexed actor,
-        string description,
-        string txId
+        address indexed logger
     );
 
-    AuditEntry[] private _entries;
+    AIActionAuditLog[] private _auditLogs;
 
-    function logAction(
-        bytes32 actionHash,
-        string calldata description,
-        string calldata txId
-    ) external {
-        uint256 ts = block.timestamp;
-        AuditEntry memory entry = AuditEntry({
+    /**
+     * @notice Store an audit log hash and timestamp for an AI action.
+     * @param actionHash The SHA256 hash of the action (32 bytes); pass as bytes32.
+     * @param timestamp Optional off-chain timestamp; stored for reference (on-chain ts used in event).
+     */
+    function logAIAction(bytes32 actionHash, uint256 timestamp) external {
+        uint256 ts = timestamp > 0 ? timestamp : block.timestamp;
+        _auditLogs.push(AIActionAuditLog({
             actionHash: actionHash,
             timestamp: ts,
-            actor: msg.sender,
-            description: description,
-            txId: txId
-        });
-
-        _entries.push(entry);
-        emit ActionLogged(actionHash, ts, msg.sender, description, txId);
+            logger: msg.sender
+        }));
+        emit AIActionLogged(actionHash, ts, msg.sender);
     }
 
-    function getEntry(uint256 index) external view returns (AuditEntry memory) {
-        require(index < _entries.length, "out of range");
-        return _entries[index];
+    /**
+     * @notice Get a single audit log entry by index.
+     */
+    function getAuditLog(uint256 index) external view returns (AIActionAuditLog memory) {
+        require(index < _auditLogs.length, "AuditSentinel: index out of range");
+        return _auditLogs[index];
     }
 
-    function totalEntries() external view returns (uint256) {
-        return _entries.length;
+    /**
+     * @notice Total number of audit log entries stored.
+     */
+    function totalAuditLogs() external view returns (uint256) {
+        return _auditLogs.length;
     }
 }
-

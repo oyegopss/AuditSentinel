@@ -1,39 +1,46 @@
 from __future__ import annotations
 
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 from uuid import UUID, uuid4
 
 from sqlalchemy.orm import Session
 
-from ..domain.models import DecisionTrace, RiskLevel
-from .risk_service import classify_text_risk
-from ..db.models import DecisionTraceORM
+from ..domain.models import DecisionTrace
+from ..risk_engine import RiskLevel, RiskAssessment, classify_text_risk
+from ..database.models import DecisionTraceORM
+from ..logging_config import get_logger
 
 
+logger = get_logger("agents.decision")
 _DECISION_TRACES: List[DecisionTrace] = []
 
 
 def run_task_and_log_decision(
   task_text: str,
-  db: Session | None = None
+  db: Session | None = None,
+  task_id: Optional[UUID] = None,
 ) -> Tuple[UUID, DecisionTrace]:
-  """
-  Lightweight stand‑in for a LangChain agent run wired into risk detection.
+  if task_id is None:
+    task_id = uuid4()
+  risk_assessment: RiskAssessment = classify_text_risk(task_text)
 
-  Flow:
-  - Agent receives a task description and produces a decision output
-  - Risk module scores the task to determine LOW/MEDIUM/HIGH/CRITICAL
-  - For HIGH/CRITICAL, the frontend is instructed to route via human approval
-  - Decision trace is stored in memory and persisted to PostgreSQL (if a
-    session is provided).
-  """
-  risk_assessment = classify_text_risk(task_text)
+  if risk_assessment.matched_phrases:
+    keyword_str = ", ".join(risk_assessment.matched_phrases)
+    detection_step = (
+      f"Detected policy / risk keywords ({keyword_str}) and applied rules "
+      f"→ classified as {risk_assessment.risk.value} risk."
+    )
+  else:
+    detection_step = (
+      f"Evaluated task against governance policies; no destructive keywords "
+      f"found → classified as {risk_assessment.risk.value} risk."
+    )
 
   reasoning_steps = [
     "Parsed task description and extracted core intent.",
-    f"Matched task against policy and risk rules → {risk_assessment.risk.value} risk.",
-    "Checked if human approval is required for this risk band.",
-    "Prepared recommended action with safeguards and logging hooks."
+    detection_step,
+    "Checked whether this risk band requires human approval.",
+    "Prepared recommended action with safeguards, logging, and human approval gates for high/critical risk.",
   ]
 
   recommended_action = (
@@ -57,7 +64,6 @@ def run_task_and_log_decision(
   )
 
   _DECISION_TRACES.append(trace)
-  task_id = uuid4()
   trace.task_id = task_id
 
   if db is not None:
@@ -73,6 +79,16 @@ def run_task_and_log_decision(
     db.add(db_obj)
     db.commit()
 
+  logger.info(
+    "AI decision generated",
+    extra={
+      "event": "agent_decision",
+      "task_id": str(task_id),
+      "risk": trace.risk.value,
+      "recommended_action": trace.recommended_action,
+      "confidence": trace.confidence,
+    },
+  )
   return task_id, trace
 
 
@@ -80,5 +96,3 @@ def get_latest_decision_trace() -> DecisionTrace | None:
   if not _DECISION_TRACES:
     return None
   return _DECISION_TRACES[-1]
-
-

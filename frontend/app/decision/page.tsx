@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent, Badge, RiskMeter, RiskPill } from "@/components/ui";
+import { DecisionTimeline } from "@/components/decision-timeline";
+import { apiUrl } from "@/lib/api";
 
 type DecisionTrace = {
   task_id: string | null;
@@ -21,7 +23,7 @@ export default function DecisionPage() {
     const fetchTrace = async () => {
       setLoading(true);
       try {
-        const res = await fetch("http://localhost:8000/decision-trace");
+        const res = await fetch(apiUrl("/decision-trace"));
         const data = await res.json();
         setTrace(data);
       } catch (e) {
@@ -36,10 +38,10 @@ export default function DecisionPage() {
   return (
     <section className="space-y-6">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">
+        <h1 className="text-2xl font-bold tracking-tight text-[#E5E7EB]">
           AI decision explainability
         </h1>
-        <p className="text-sm text-gray-400 max-w-xl">
+        <p className="text-sm text-[#9CA3AF] max-w-xl">
           Inspect the latest agent decision with reasoning steps, confidence,
           risk band, and recommended governance action.
         </p>
@@ -50,14 +52,9 @@ export default function DecisionPage() {
           <div className="space-y-1">
             <CardTitle>Decision summary</CardTitle>
             {trace && (
-              <div className="flex flex-wrap items-center gap-2 text-[11px] text-gray-400">
-                <span>
-                  Task ID:{" "}
-                  <span className="font-mono text-gray-300">
-                    {trace.task_id ?? "–"}
-                  </span>
-                </span>
-                <span className="h-4 w-px bg-gray-700" />
+              <div className="flex flex-wrap items-center gap-2 text-[11px] text-[#6B7280]">
+                <span>Task ID: <span className="font-mono text-[#9CA3AF]">{trace.task_id ?? "\u2013"}</span></span>
+                <span className="h-4 w-px bg-white/[0.06]" />
                 <span>Created: {new Date(trace.created_at).toLocaleString()}</span>
               </div>
             )}
@@ -71,33 +68,26 @@ export default function DecisionPage() {
           )}
         </CardHeader>
         <CardContent>
-          {loading && (
-            <p className="text-sm text-gray-400">Loading latest decision trace…</p>
-          )}
+          {loading && <p className="text-sm text-[#9CA3AF]">Loading latest decision trace...</p>}
           {!loading && trace && (
             <>
-              <p className="text-sm text-gray-100">{trace.output}</p>
+              <p className="text-sm text-[#E5E7EB]">{trace.output}</p>
               <RiskMeter score={trace.confidence ?? 0} />
               <div className="mt-4 space-y-2">
-                <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                  Reasoning steps
-                </div>
-                <ol className="space-y-1 text-sm text-gray-200 list-decimal list-inside">
-                  {trace.reasoning_steps.map((step, idx) => (
-                    <li key={idx}>{step}</li>
-                  ))}
+                <div className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Reasoning steps</div>
+                <ol className="space-y-1 text-sm text-[#E5E7EB]/80 list-decimal list-inside">
+                  {trace.reasoning_steps.map((step, idx) => (<li key={idx}>{step}</li>))}
                 </ol>
               </div>
             </>
           )}
           {!loading && !trace && (
-            <p className="text-sm text-gray-400">
-              No decision trace available yet. Submit a task first.
-            </p>
+            <p className="text-sm text-[#9CA3AF]">No decision trace available yet. Submit a task first.</p>
           )}
         </CardContent>
       </Card>
+
+      <DecisionTimeline />
     </section>
   );
 }
-

@@ -1,9 +1,14 @@
 """
 AuditSentinel FastAPI application package.
 
-The app is structured into:
-- domain: core domain models and enums
-- services: orchestration and business logic (risk, decisions, blockchain)
-- api: FastAPI routers exposing HTTP endpoints for the frontend
+Modular layout:
+- api: FastAPI routers (task, decision, risk, audit, governance, timeline, monitoring, report, analytics)
+- agents: decision/task execution (planning, execution agent logic)
+- risk_engine: risk classification (RiskLevel, classify_text_risk, classify_scenario_risk, etc.)
+- blockchain: action hashing and on-chain logging
+- database: SQLAlchemy session, engine, ORM models (DecisionTraceORM, AuditLogORM)
+- services: governance score, report generator
+- utils: shared helpers (e.g. fmt_ts)
+- domain: shared domain models (DecisionTrace, AuditLogEntry) used across modules
 """
 

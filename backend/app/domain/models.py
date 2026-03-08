@@ -2,16 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
 from typing import List, Optional
 from uuid import UUID, uuid4
 
-
-class RiskLevel(str, Enum):
-  LOW = "low"
-  MEDIUM = "medium"
-  HIGH = "high"
-  CRITICAL = "critical"
+from ..risk_engine import RiskLevel
 
 
 @dataclass
@@ -36,13 +30,3 @@ class AuditLogEntry:
   risk: RiskLevel = RiskLevel.LOW
   status: str = "pending"
   created_at: datetime = field(default_factory=datetime.utcnow)
-
-
-@dataclass
-class RiskAssessment:
-  scenario: Optional[str]
-  risk: RiskLevel
-  score: float
-  explanation: str
-
-

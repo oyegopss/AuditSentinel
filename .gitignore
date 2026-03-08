@@ -9,6 +9,8 @@ backend/.venv
 backend/__pycache__
 backend/.mypy_cache
 backend/.pytest_cache
+backend/*.db
+backend/auditsentinel.db
 
 # OS / editor
 .DS_Store

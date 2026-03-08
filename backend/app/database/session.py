@@ -1,15 +1,13 @@
-import os
-
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
+from ..config import get_settings
 
-DATABASE_URL = os.getenv(
-  "DATABASE_URL",
-  "postgresql+psycopg2://postgres:postgres@localhost:5432/auditsentinel"
-)
-
-engine = create_engine(DATABASE_URL, future=True)
+_settings = get_settings()
+_connect_args = {}
+if _settings.database_url.startswith("sqlite"):
+  _connect_args["check_same_thread"] = False
+engine = create_engine(_settings.database_url, connect_args=_connect_args, future=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -20,5 +18,3 @@ def get_session():
     yield db
   finally:
     db.close()
-
-

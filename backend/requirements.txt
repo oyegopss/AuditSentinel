@@ -1,9 +1,11 @@
 fastapi
 uvicorn[standard]
 pydantic
+pydantic-settings
 sqlalchemy
 psycopg2-binary
 python-dotenv
 langchain
 web3
+reportlab
 

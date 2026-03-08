@@ -1,16 +1,18 @@
 from __future__ import annotations
 
+from typing import Optional
+
 from pydantic import BaseModel
 from fastapi import APIRouter
 
-from ...services.decision_service import get_latest_decision_trace
+from ...agents import get_latest_decision_trace
 
 
 router = APIRouter()
 
 
 class DecisionTraceResponse(BaseModel):
-  task_id: str | None
+  task_id: Optional[str]
   output: str
   reasoning_steps: list[str]
   confidence: float
@@ -19,15 +21,22 @@ class DecisionTraceResponse(BaseModel):
   created_at: str
 
 
-@router.get("/decision-trace", response_model=DecisionTraceResponse)
+@router.get(
+  "/decision-trace",
+  response_model=DecisionTraceResponse,
+  summary="Get latest AI decision trace",
+  description="Latest AI decision from task submission: output, reasoning steps, confidence, risk, recommended action.",
+)
 async def get_decision_trace() -> DecisionTraceResponse:
   """
-  Returns the latest decision trace captured from the agent run.
-  Suitable for powering an XAI dashboard panel in the frontend.
+  Return the most recent AI decision trace for explainability (XAI) dashboards.
+
+  Includes the agent's decision output, ordered reasoning steps, confidence score,
+  risk level, recommended action, and creation timestamp. If no task has been
+  submitted yet, returns a placeholder with idle state.
   """
   trace = get_latest_decision_trace()
   if trace is None:
-    # Provide a synthetic example to keep the demo self‑contained.
     from datetime import datetime, timezone
 
     return DecisionTraceResponse(
@@ -52,5 +61,3 @@ async def get_decision_trace() -> DecisionTraceResponse:
     recommended_action=trace.recommended_action,
     created_at=trace.created_at.isoformat()
   )
-
-
